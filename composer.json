@@ -1,0 +1,34 @@
+{
+    "name": "dashmedia/premium-pages",
+    "description": "",
+    "type": "modx-package",
+    "keywords": ["modx"],
+    "homepage": "https://github.com/dashmedia/premium-pages",
+    "license": "GPL-2.0+",
+    "authors": [
+        {
+            "name": "Jason Carney",
+            "email": "jason@dashmedia.com.au",
+            "homepage" : "https://dash.marketing/"
+        }        
+    ],
+    "support": {
+        "email": "jason@dashmedia.com.au",
+        "issues": "https://github.com/dashmedia/premium-pages/issues",
+        "forum": "http://forums.modx.com/",
+        "source": "https://github.com/dashmedia/premium-pages.git"
+    },    
+    "require": {
+        "php": ">=5.3"
+    },
+    "autoload": {
+        "classmap":["model/"]
+    },
+    "extra": {
+        "package_name": "PremiumPages",
+        "namespace": "premiumpages",
+        "version": "1.0.0",
+        "release": "pl",
+        "category":"Premium Pages"
+    }
+}
