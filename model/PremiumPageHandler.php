@@ -1,12 +1,11 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: jasoncarney
  * Date: 15/11/16
  * Time: 12:19 PM
  */
-
-
 class PremiumPageHandler
 {
     /**
@@ -29,13 +28,20 @@ class PremiumPageHandler
         $this->resource = $resource;
     }
 
+    public function loadModxAPI($context)
+    {
+        $modx = new modX();
+        $modx->initialize($context);
+        $this->modx = $modx;
+    }
+
     /**
      * @return boolean false if not premium, true on success
      */
     public function handlePageSave()
     {
 
-        if(!$this->isPremiumPage($this->resource)){
+        if (!$this->isPremiumPage($this->resource)) {
             return false; //nothing to do
         }
 
@@ -50,16 +56,32 @@ class PremiumPageHandler
      * @param string $priceTv name of tv holding the price to charge
      * @param string $pagesSoldTv name of tv holding ID's of pages to grant access to
      * @param int $salesPage ID of pages with pagesSoldTv value we need to inspect
+     * @throws Exception 06: non authenticated user
      */
     public function handlePayment($stripeToken, $priceTv, $pagesSoldTv, $salesPage)
     {
+        $user = $this->modx->getUser();
+        if($user->get('id') == 0){
+            throw new Exception('Error 06: You must be logged in to purchase products');
+        }
+        //try to swap to using modx from the API
+        $this->loadModxAPI($this->modx->context->get('key'));
+
         //check requested purchase is valid.
         $userGroups = $this->getRequestedUserGroups($pagesSoldTv, $salesPage);
+
         //process payment
 
-        //add user to group
+        //add user to group/s
+        foreach ($userGroups as $userGroup){
+            $user->joinGroup($userGroup->get('id'));
+        }
+
+        //flush permissions
+        $this->flushPermissions();
 
         //return success
+
     }
 
     /**
@@ -68,6 +90,7 @@ class PremiumPageHandler
      * @return modUserGroup[]
      * @throws Exception 03: page not found
      * @throws Exception 04: No products
+     * @throws Exception 05: Product for ID does not exist
      */
     private function getRequestedUserGroups($pagesSoldTv, $salesPage)
     {
@@ -76,21 +99,41 @@ class PremiumPageHandler
          */
         //grab our sales page
         $salesResource = $this->modx->getObject('modResource', intval($salesPage));
-        if(!$salesResource instanceof modResource){
-            throw new Exception('Error 03: Sales page not found (ID: '.$salesPage.')');
+        if (!$salesResource instanceof modResource) {
+            throw new Exception('Error 03: Sales page not found (ID: ' . $salesPage . ')');
         }
 
         //grab which products we're buying
         $products = $salesResource->getTVValue($pagesSoldTv);
-        $products = explode(',',$products);
+        $products = explode(',', $products);
 
-        if(count($products) < 1){
-            throw new Exception('Error 04: No Product\'s associated with given sales page (ID: '.$salesPage.')');
+        if (count($products) < 1) {
+            throw new Exception('Error 04: No Product\'s associated with given sales page (ID: ' . $salesPage . ')');
         }
+        //check page exists, check user group exists
+        $userGroups = array();
+        foreach ($products as $productId) {
+            $product = $this->modx->getObject('modResource', intval($productId));
 
-        foreach ($products as &$product){ //replace id with actual page
+            if(empty($product)){
+                throw new Exception('Error 05: Product not found (ID: '. $productId . ')');
+            }
 
+            $resourceGroup = $this->getResourceGroup($product->get('id'));
+
+            if($resourceGroup instanceof modResourceGroup){
+                $userGroup = $this->modx->getObject('modUserGroup', array(
+                    'name' => $resourceGroup->get('name')
+                ));
+
+                if(empty($userGroup)){
+                    throw new Exception('Error 06: No user group found (Name: '. $resourceGroup->get('name') .')');
+                }
+
+                $userGroups[] = $userGroup;
+            }
         }
+        return $userGroups;
     }
 
     /**
@@ -98,31 +141,32 @@ class PremiumPageHandler
      */
     private function assignResourceGroup()
     {
-
         $resourceGroup = $this->getResourceGroup();
-        if($resourceGroup instanceof modResourceGroup){
-            $resourceGroupName = $resourceGroup->get('name');
-            if(!$this->resource->isMember($resourceGroupName)){
-                $this->resource->joinGroup($resourceGroup);
-            }
-        } else {
-            throw new Exception('Error 02: No valid resource group');
+        if (!$resourceGroup instanceof modResourceGroup) {
+            //none found, make it
+            $name = $this->getPrefix() . $this->resource->get('pagetitle');
+            $resourceGroup = $this->createPremiumGroup($name);
+        }
+        $resourceGroupName = $resourceGroup->get('name');
+        if (!$this->resource->isMember($resourceGroupName)) {
+            $this->resource->joinGroup($resourceGroup);
         }
     }
 
     /**
-     * @description Will return an existing resource group, or create a new one
+     * @description Will return an existing resource group
      *
-     * @return modResourceGroup
-     * @var xPDOQuery $query;
+     * @return modResourceGroup|false false if not found
+     * @var xPDOQuery $query ;
      * @throws Exception 01: too many results
      */
-    private function getResourceGroup()
+    private function getResourceGroup($product = null)
     {
-        $prefix = $this->getPrefix();
+
+        $prefix = $this->getPrefix($product);
         $query = $this->modx->newQuery('modResourceGroup');
         $query->where(array(
-            'name:LIKE' => $prefix.'%'
+            'name:LIKE' => $prefix . '%'
         ));
 
         $results = $this->modx->getCollection('modResourceGroup', $query);
@@ -132,8 +176,7 @@ class PremiumPageHandler
                 reset($results);
                 return current($results);
             case 0:
-                $name = $prefix . $this->resource->get('pagetitle');
-                return $this->createPremiumGroup($name);
+                return false;
             default:
                 throw new Exception('Error 01: Multiple resource groups found');
         }
@@ -163,7 +206,7 @@ class PremiumPageHandler
 
         //user group
         $userGroup = $this->modx->newObject('modUserGroup');
-        $userGroup->set('name',$name);
+        $userGroup->set('name', $name);
         $userGroup->save();
 
         //grant load privileges to new user group to context
@@ -172,7 +215,7 @@ class PremiumPageHandler
         $this->grantContextLoad($userGroup, $contextKey);
 
         //resource group access (add admins and managers as well)
-        $this->grantResourceGroupAccess($userGroup,$resourceGroup,$contextKey);
+        $this->grantResourceGroupAccess($userGroup, $resourceGroup, $contextKey);
 
         $this->flushPermissions();
     }
@@ -181,7 +224,7 @@ class PremiumPageHandler
      * @param modUserGroup $userGroup to grant load access
      * @param string $key for context
      */
-    private function grantContextLoad($userGroup,$key)
+    private function grantContextLoad($userGroup, $key)
     {
         /**
          * @var xPDOQuery $policyQuery
@@ -200,7 +243,7 @@ class PremiumPageHandler
         $contextAccess->set('principal_class', 'modUserGroup');
         $contextAccess->set('principal', $userGroup->get('id'));
         $contextAccess->set('policy', $accessPolicy->get('id'));
-        $contextAccess->set('authority',9999);
+        $contextAccess->set('authority', 9999);
         $contextAccess->save();
     }
 
@@ -214,6 +257,7 @@ class PremiumPageHandler
         /**
          * @var modAccessPolicy $adminPolicy
          * @var modAccessPolicy $loadPolicy
+         * @var modAccessPolicy $viewPolicy
          * @var modAccessResourceGroup $resourceGroupAccess
          */
 
@@ -222,33 +266,33 @@ class PremiumPageHandler
 
 
         $adminPolicy = $this->modx->getObject('modAccessPolicy', array('name' => 'Resource'));
-        $loadPolicy = $this->modx->getObject('modAccessPolicy', array('name' => 'Load Only'));
+        $viewPolicy = $this->modx->getObject('modAccessPolicy', array('name' => 'Load, List and View'));
+
         //we only need the ID's really
         $adminPolicyId = $adminPolicy->get('id');
-        $loadPolicyId = $loadPolicy->get('id');
+        $viewPolicyId = $viewPolicy->get('id');
 
         //add admins
-        foreach ($adminGroups as $adminGroup){
+        foreach ($adminGroups as $adminGroup) {
             $adminGroupId = intval($adminGroup);
             $resourceGroupAccess = $this->modx->newObject('modAccessResourceGroup');
             $resourceGroupAccess->set('target', $resourceGroup->get('id'));
             $resourceGroupAccess->set('principal_class', 'modUserGroup');
             $resourceGroupAccess->set('principal', $adminGroupId);
-            $resourceGroupAccess->set('authority',9999);
+            $resourceGroupAccess->set('authority', 9999);
             $resourceGroupAccess->set('policy', $adminPolicyId);
             $resourceGroupAccess->set('context_key', $contextKey);
             $resourceGroupAccess->save();
         }
 
         //add new user group
-
         $resourceGroupAccess = $this->modx->newObject('modAccessResourceGroup');
         $resourceGroupAccess->set('target', $resourceGroup->get('id'));
         $resourceGroupAccess->set('principal_class', 'modUserGroup');
         $resourceGroupAccess->set('principal', $userGroup->get('id'));
-        $resourceGroupAccess->set('authority',9999);
-        $resourceGroupAccess->set('policy',$loadPolicyId);
-        $resourceGroupAccess->set('context_key',$contextKey);
+        $resourceGroupAccess->set('authority', 9999);
+        $resourceGroupAccess->set('policy', $viewPolicyId);
+        $resourceGroupAccess->set('context_key', $contextKey);
         $resourceGroupAccess->save();
 
 
@@ -256,20 +300,23 @@ class PremiumPageHandler
 
     private function flushPermissions()
     {
-        $this->modx->runProcessor('security/access',array(
-            'action' => 'flush'
-        ));
+
+        $result = $this->modx->runProcessor('security/access/flush');
         //alternate permission flush from gist
         //$modx->user->getAttributes(array(), '', true);
     }
 
     /**
+     * @param int|null $product pass ID of page
      * @return string The prefix for Resource Groups etc...
      */
-    private function getPrefix()
+    private function getPrefix($product = null)
     {
-        $id = $this->resource->get('id');
-        return sprintf($this->resourceGroupPrefix,$id);
+        $id = intval($product);
+        if(empty($product)) {
+            $id = $this->resource->get('id');
+        }
+        return sprintf($this->resourceGroupPrefix, $id);
     }
 
     /**
@@ -288,7 +335,7 @@ class PremiumPageHandler
     {
         $thisTemplate = $resource->get('template');
         $templates = $this->modx->getOption('premiumpages.templates');
-        $templates = explode(',',$templates);
+        $templates = explode(',', $templates);
         return in_array($thisTemplate, $templates);
     }
 }
