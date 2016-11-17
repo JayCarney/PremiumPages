@@ -15,8 +15,11 @@ class PremiumPageStripeGateway implements PremiumPageHandlerPaymentGateway
     private $secret_key;
     private $token;
     private $description;
+
     /**
      * PremiumPageStripeGateway constructor.
+     * @param array $options
+     * @throws Exception
      */
     public function __construct($options)
     {
@@ -48,6 +51,13 @@ class PremiumPageStripeGateway implements PremiumPageHandlerPaymentGateway
         $chargeOptions['amount'] = $this->charge;
         $chargeOptions['currency'] = 'aud';
         $chargeOptions['source'] = $this->token;
+//        $chargeOptions['source'] = array(
+//            "exp_month" => '12',
+//            "exp_year" => '22',
+//            "number" => '4242424242424242',
+//            "object" => 'card',
+//            "cvc" => '123'
+//        );
         $chargeOptions['description'] = $this->description;
 
 
@@ -68,4 +78,11 @@ class PremiumPageStripeGateway implements PremiumPageHandlerPaymentGateway
         $this->charge = $charge;
     }
 
+    /**
+     * @param string $description
+     */
+    public function setDescription($description)
+    {
+        $this->description = $description;
+    }
 }

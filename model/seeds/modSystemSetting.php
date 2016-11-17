@@ -29,14 +29,14 @@ return array(
     ),
     array(
         'key'  		=>     'premiumpages.stripe_secret_key',
-        'value'		=>     'stripe',
+        'value'		=>     '',
         'xtype'		=>     'textfield',
         'namespace' => 'premiumpages',
         'area' 		=> 'premiumpages:stripe'
     ),
     array(
         'key'  		=>     'premiumpages.stripe_public_key',
-        'value'		=>     'stripe',
+        'value'		=>     '',
         'xtype'		=>     'textfield',
         'namespace' => 'premiumpages',
         'area' 		=> 'premiumpages:stripe'

@@ -18,4 +18,9 @@ interface PremiumPageHandlerPaymentGateway
      * @param int $charge
      */
     public function setCharge($charge);
+
+    /**
+     * @param string $description
+     */
+    public function setDescription($description);
 }

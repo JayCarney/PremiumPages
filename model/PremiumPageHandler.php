@@ -13,12 +13,14 @@ class PremiumPageHandler
      * @param boolean $debug
      * @param modResource $resource
      * @param int $charge
+     * @param string $description
      */
 
     private $modx;
     private $resourceGroupPrefix = 'Premium Page %d ';
     private $resource;
     private $charge;
+    private $description;
 
     /**
      * @param modX $modx
@@ -103,7 +105,7 @@ class PremiumPageHandler
         if(!$salesPageResource){
             throw new Exception('Error 07: Invalid sales page provided (ID: '.$salesPage.')');
         }
-
+        $description = $salesPageResource->get('pagetitle');
         $saleValue = floatval($salesPageResource->getTVValue($priceTv));
 
         if(empty($saleValue) || $saleValue < 0){
@@ -112,6 +114,7 @@ class PremiumPageHandler
 
         //convert to cents
         $this->charge = intval($saleValue * 100);
+        $this->description = $description;
     }
 
     /**
@@ -140,6 +143,7 @@ class PremiumPageHandler
             case 'stripe':
                 $options = array();
                 $options['token'] = $token;
+                $options['description'] = $this->description;
                 $options['secret_key'] = $this->modx->getOption('premiumpages.stripe_secret_key');
                 return new PremiumPageStripeGateway($options);
                 break;

@@ -42,5 +42,5 @@ $_lang['setting_premiumpages.payment_gateway'] = 'Payment gateway to use';
 $_lang['setting_premiumpages.payment_gateway_desc'] = 'only supports Stripe currently: \'stripe\'';
 $_lang['setting_premiumpages.stripe_public_key'] = 'Stripe publishable key';
 $_lang['setting_premiumpages.stripe_public_key_desc'] = '';
-$_lang['setting_premiumpages.stripe_private_key'] = 'Stripe secret key';
-$_lang['setting_premiumpages.stripe_private_key_desc'] = '';
+$_lang['setting_premiumpages.stripe_secret_key'] = 'Stripe secret key';
+$_lang['setting_premiumpages.stripe_secret_key_desc'] = '';

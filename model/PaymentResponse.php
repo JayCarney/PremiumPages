@@ -17,6 +17,9 @@ class PaymentResponse
     public $receipt_id;
     public $charge_value;
     public $description;
+    /**
+     * @var modUser $user
+     */
     public $user;
 
     /**
@@ -38,5 +41,31 @@ class PaymentResponse
     public function setUser($user)
     {
         $this->user = $user;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray()
+    {
+        $output = array();
+        $output['receipt_id'] = $this->receipt_id;
+        $output['charge_value'] = $this->charge_value;
+        $formatted = floatval($this->charge_value) / 100;
+        $output['charge_formatted'] = '$' . number_format($formatted, 2);
+        $output['description'] = $this->description;
+        $output['user_id'] = $this->user->get('id');
+        $output['user_username'] = $this->user->get('username');
+        $userProfile = $this->user->getOne('Profile');
+        $output['user_fullname'] = $userProfile->get('fullname');
+        return $output;
+    }
+
+    /**
+     *
+     */
+    public function __toString()
+    {
+        return var_export($this->toArray(),true);
     }
 }
