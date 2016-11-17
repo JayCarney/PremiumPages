@@ -19,7 +19,8 @@
         "source": "https://github.com/dashmedia/premium-pages.git"
     },    
     "require": {
-        "php": ">=5.3"
+        "php": ">=5.3",
+        "stripe/stripe-php": "^4.1"
     },
     "autoload": {
         "classmap":["model/"]
