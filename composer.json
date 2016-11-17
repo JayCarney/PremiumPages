@@ -1,9 +1,9 @@
 {
-    "name": "dashmedia/premium-pages",
+    "name": "dashmedia/PremiumPages",
     "description": "",
     "type": "modx-package",
     "keywords": ["modx"],
-    "homepage": "https://github.com/dashmedia/premium-pages",
+    "homepage": "https://github.com/dashmedia/PremiumPages",
     "license": "GPL-2.0+",
     "authors": [
         {
@@ -14,9 +14,9 @@
     ],
     "support": {
         "email": "jason@dashmedia.com.au",
-        "issues": "https://github.com/dashmedia/premium-pages/issues",
+        "issues": "https://github.com/dashmedia/PremiumPages/issues",
         "forum": "http://forums.modx.com/",
-        "source": "https://github.com/dashmedia/premium-pages.git"
+        "source": "https://github.com/dashmedia/PremiumPages.git"
     },    
     "require": {
         "php": ">=5.3",

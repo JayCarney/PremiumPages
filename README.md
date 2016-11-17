@@ -1,5 +1,4 @@
-PremiumPages
------
+#PremiumPages
 
 Author: Jason <jason@dashmedia.com.au>
 Copyright 2015
