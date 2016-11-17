@@ -12,11 +12,13 @@ class PremiumPageHandler
      * @param modX $modx
      * @param boolean $debug
      * @param modResource $resource
+     * @param int $charge
      */
 
     private $modx;
     private $resourceGroupPrefix = 'Premium Page %d ';
     private $resource;
+    private $charge;
 
     /**
      * @param modX $modx
@@ -52,14 +54,18 @@ class PremiumPageHandler
     }
 
     /**
-     * @param string $stripeToken stripe payment token
+     * @param string $token stripe payment token
      * @param string $priceTv name of tv holding the price to charge
      * @param string $pagesSoldTv name of tv holding ID's of pages to grant access to
      * @param int $salesPage ID of pages with pagesSoldTv value we need to inspect
+     * @return PaymentResponse
      * @throws Exception 06: non authenticated user
      */
-    public function handlePayment($stripeToken, $priceTv, $pagesSoldTv, $salesPage)
+    public function handlePayment($token, $priceTv, $pagesSoldTv, $salesPage)
     {
+        /**
+         * @var modResource $salesPageResource
+         */
         $user = $this->modx->getUser();
         if($user->get('id') == 0){
             throw new Exception('Error 06: You must be logged in to purchase products');
@@ -70,18 +76,77 @@ class PremiumPageHandler
         //check requested purchase is valid.
         $userGroups = $this->getRequestedUserGroups($pagesSoldTv, $salesPage);
 
+        //get payment amount from page
+        $this->getPaymentDetails($salesPage, $priceTv);
+
         //process payment
+        $paymentResponse = $this->chargePayment($token);
 
         //add user to group/s
         foreach ($userGroups as $userGroup){
             $user->joinGroup($userGroup->get('id'));
         }
 
+        $paymentResponse->setUser($user);
+
         //flush permissions
         $this->flushPermissions();
 
-        //return success
+        //return payment response
+        return $paymentResponse;
 
+    }
+
+    private function getPaymentDetails($salesPage, $priceTv)
+    {
+        $salesPageResource = $this->modx->getObject('modResource', $salesPage);
+        if(!$salesPageResource){
+            throw new Exception('Error 07: Invalid sales page provided (ID: '.$salesPage.')');
+        }
+
+        $saleValue = floatval($salesPageResource->getTVValue($priceTv));
+
+        if(empty($saleValue) || $saleValue < 0){
+            throw new Exception('Error 08: Invalid price supplied (ID:'.$salesPage.')');
+        }
+
+        //convert to cents
+        $this->charge = intval($saleValue * 100);
+    }
+
+    /**
+     * @param $token
+     * @return PaymentResponse
+     */
+    private function chargePayment($token)
+    {
+        $paymentHandler = $this->getPaymentProcessor($token);
+        $paymentHandler->setCharge($this->charge);
+        return $paymentHandler->processPayment();
+    }
+
+    /**
+     * @param mixed $token payment token
+     * @return false|PremiumPageHandlerPaymentGateway
+     */
+    private function getPaymentProcessor($token)
+    {
+        /**
+         * @var string $type
+         */
+        $type = $this->modx->getOption('premiumpages.payment_gateway');
+
+        switch ($type){
+            case 'stripe':
+                $options = array();
+                $options['token'] = $token;
+                $options['secret_key'] = $this->modx->getOption('premiumpages.stripe_secret_key');
+                return new PremiumPageStripeGateway($options);
+                break;
+            default:
+                return false;
+                break;
+        }
     }
 
     /**
@@ -301,7 +366,7 @@ class PremiumPageHandler
     private function flushPermissions()
     {
 
-        $result = $this->modx->runProcessor('security/access/flush');
+        $this->modx->runProcessor('security/access/flush');
         //alternate permission flush from gist
         //$modx->user->getAttributes(array(), '', true);
     }

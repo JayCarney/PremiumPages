@@ -19,6 +19,27 @@ return array(
         'xtype'		=>     'textfield',
         'namespace' => 'premiumpages',
         'area' 		=> 'premiumpages:default'
+    ),
+    array(
+        'key'  		=>     'premiumpages.payment_gateway',
+        'value'		=>     'stripe',
+        'xtype'		=>     'textfield',
+        'namespace' => 'premiumpages',
+        'area' 		=> 'premiumpages:default'
+    ),
+    array(
+        'key'  		=>     'premiumpages.stripe_secret_key',
+        'value'		=>     'stripe',
+        'xtype'		=>     'textfield',
+        'namespace' => 'premiumpages',
+        'area' 		=> 'premiumpages:stripe'
+    ),
+    array(
+        'key'  		=>     'premiumpages.stripe_public_key',
+        'value'		=>     'stripe',
+        'xtype'		=>     'textfield',
+        'namespace' => 'premiumpages',
+        'area' 		=> 'premiumpages:stripe'
     )
 );
 /*EOF*/
