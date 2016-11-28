@@ -28,7 +28,7 @@
     "extra": {
         "package_name": "PremiumPages",
         "namespace": "premiumpages",
-        "version": "1.0.0",
+        "version": "1.0.5",
         "release": "pl",
         "category":"Premium Pages"
     }

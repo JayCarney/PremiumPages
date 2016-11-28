@@ -32,10 +32,18 @@ $salesPage = $modx->getOption('salesPage',$scriptProperties);
 $salesPageVar = $modx->getOption('salesPageVar',$scriptProperties);
 $priceTv = $modx->getOption('priceTv',$scriptProperties);
 $productsTv = $modx->getOption('productsTv',$scriptProperties);
-$tpl = $modx->getOption('tpl',$scriptProperties,'PremiumPagesOutput');
-$errorTpl = $modx->getOption('errorTpl',$scriptProperties, $tpl);
+$tpl = $modx->getOption('tpl',$scriptProperties);
+$errorTpl = $modx->getOption('errorTpl',$scriptProperties);
 $token = $modx->getOption('token',$scriptProperties);
 $tokenVar = $modx->getOption('tokenVar',$scriptProperties, 'stripe_token');
+
+if(empty($tpl)){
+    $tpl = 'PremiumPagesOutput';
+}
+
+if(empty($errorTpl)){
+    $errorTpl = $tpl;
+}
 
 if(!empty($salesPageVar)){
     $salesPage = $_REQUEST[$salesPageVar];

@@ -21,6 +21,13 @@ return array(
         'area' 		=> 'premiumpages:default'
     ),
     array(
+        'key'  		=>     'premiumpages.clients',
+        'value'		=>     '',
+        'xtype'		=>     'textfield',
+        'namespace' => 'premiumpages',
+        'area' 		=> 'premiumpages:default'
+    ),
+    array(
         'key'  		=>     'premiumpages.payment_gateway',
         'value'		=>     'stripe',
         'xtype'		=>     'textfield',

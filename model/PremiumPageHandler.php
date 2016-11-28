@@ -32,10 +32,12 @@ class PremiumPageHandler
         $this->resource = $resource;
     }
 
-    public function loadModxAPI($context)
+    private function loadModxAPI($context)
     {
+        define('MODX_API_MODE', true);
         $modx = new modX();
         $modx->initialize($context);
+        $modx->getService('error','error.modError', '', '');
         $this->modx = $modx;
     }
 
@@ -73,7 +75,7 @@ class PremiumPageHandler
             throw new Exception('Error 06: You must be logged in to purchase products');
         }
         //try to swap to using modx from the API
-        $this->loadModxAPI($this->modx->context->get('key'));
+//        $this->loadModxAPI($this->modx->context->get('key'));
 
         //check requested purchase is valid.
         $userGroups = $this->getRequestedUserGroups($pagesSoldTv, $salesPage);
@@ -331,15 +333,20 @@ class PremiumPageHandler
          */
 
         $adminGroups = $this->modx->getOption('premiumpages.admins');
+        $clientGroups = $this->modx->getOption('premiumpages.clients');
+
         $adminGroups = explode(',', $adminGroups);
+        $clientGroups = explode(',', $clientGroups);
 
 
         $adminPolicy = $this->modx->getObject('modAccessPolicy', array('name' => 'Resource'));
         $viewPolicy = $this->modx->getObject('modAccessPolicy', array('name' => 'Load, List and View'));
+        $loadPolicy = $this->modx->getObject('modAccessPolicy', array('name' => 'Load Only'));
 
         //we only need the ID's really
         $adminPolicyId = $adminPolicy->get('id');
         $viewPolicyId = $viewPolicy->get('id');
+        $loadPolicyId = $loadPolicy->get('id');
 
         //add admins
         foreach ($adminGroups as $adminGroup) {
@@ -350,6 +357,19 @@ class PremiumPageHandler
             $resourceGroupAccess->set('principal', $adminGroupId);
             $resourceGroupAccess->set('authority', 9999);
             $resourceGroupAccess->set('policy', $adminPolicyId);
+            $resourceGroupAccess->set('context_key', $contextKey);
+            $resourceGroupAccess->save();
+        }
+
+        //add load only clients
+        foreach ($clientGroups as $clientGroup) {
+            $clientGroupId = intval($clientGroup);
+            $resourceGroupAccess = $this->modx->newObject('modAccessResourceGroup');
+            $resourceGroupAccess->set('target', $resourceGroup->get('id'));
+            $resourceGroupAccess->set('principal_class', 'modUserGroup');
+            $resourceGroupAccess->set('principal', $clientGroupId);
+            $resourceGroupAccess->set('authority', 9999);
+            $resourceGroupAccess->set('policy', $loadPolicyId);
             $resourceGroupAccess->set('context_key', $contextKey);
             $resourceGroupAccess->save();
         }
@@ -370,9 +390,9 @@ class PremiumPageHandler
     private function flushPermissions()
     {
 
-        $this->modx->runProcessor('security/access/flush');
+//        $this->modx->runProcessor('security/access/flush');
         //alternate permission flush from gist
-        //$modx->user->getAttributes(array(), '', true);
+        $this->modx->user->getAttributes(array(), '', true);
     }
 
     /**

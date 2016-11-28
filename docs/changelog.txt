@@ -1,5 +1,25 @@
 Changelog for YourPackage
 
+PremiumPages 1.0.5
+---------------------------------
+Fix for permission level
+
+PremiumPages 1.0.4
+---------------------------------
+Add resources as load only to client user group as well
+
+PremiumPages 1.0.3
+---------------------------------
+Attempted bug fix
+
+PremiumPages 1.0.2
+---------------------------------
+Convert to using current instance of modX instead of loading an extra one
+
+PremiumPages 1.0.1
+---------------------------------
+Fixed errorTpl and tpl value parsing
+
 PremiumPages 1.0.0
 ---------------------------------
 Initial Version
