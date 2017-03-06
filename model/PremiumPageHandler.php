@@ -91,6 +91,8 @@ class PremiumPageHandler
             $user->joinGroup($userGroup->get('id'));
         }
 
+        $this->addToCampaignMonitor($user, $userGroups);
+
         $paymentResponse->setUser($user);
 
         //flush permissions
@@ -101,6 +103,41 @@ class PremiumPageHandler
 
     }
 
+    /**
+     * @param $user modUser
+     * @param string $product_var
+     * @param modUserGroup[] $userGroups
+     * @throws Exception
+     */
+    public function addToCampaignMonitor($user, $userGroups = [], $product_var = 'Purchases'){
+        $formHandlerPath = $this->modx->getOption('formhandler.core_path');
+        $apiKey = $this->modx->getOption('premiumpages.cm_api_key');
+        $listId = $this->modx->getOption('premiumpages.cm_list_id');
+        if(!empty($formHandlerPath) && !empty($apiKey) && !empty($listId)){
+            include_once $formHandlerPath .'vendor/autoload.php';
+            $cm_api = new CM_API($apiKey, $listId);
+
+            foreach ($userGroups as $userGroup){
+                $productName = $userGroup->get('name');
+                $cm_api->add_custom_field_value(
+                    $product_var,
+                    $productName,
+                    'MultiSelectMany', true);
+            }
+
+            $profile = $user->getOne('Profile');
+            if(!$profile){
+                throw new Exception('Error 11: User profile not found');
+            }
+
+            $name = $profile->get('fullname');
+            $email = $profile->get('email');
+
+            // update campaign monitor subscription
+            $cm_api->subscribe($name, $email);
+        }
+    }
+
     private function getPaymentDetails($salesPage, $priceTv)
     {
         $salesPageResource = $this->modx->getObject('modResource', $salesPage);
@@ -108,6 +145,8 @@ class PremiumPageHandler
             throw new Exception('Error 07: Invalid sales page provided (ID: '.$salesPage.')');
         }
         $description = $salesPageResource->get('pagetitle');
+        $description .= ' (ID:'.$salesPageResource->get('id').')';
+
         $saleValue = floatval($salesPageResource->getTVValue($priceTv));
 
         if(empty($saleValue) || $saleValue < 0){
@@ -392,7 +431,10 @@ class PremiumPageHandler
 
 //        $this->modx->runProcessor('security/access/flush');
         //alternate permission flush from gist
-        $this->modx->user->getAttributes(array(), '', true);
+
+        $targets = array('modAccessResourceGroup');
+        $contextKey = $this->modx->context->get('key');
+        $this->modx->user->loadAttributes($targets, $contextKey, true);
     }
 
     /**

@@ -1,5 +1,37 @@
 Changelog for YourPackage
 
+PremiumPages 1.1.0
+---------------------------------
+Add user to Campaign Monitor on successful purchase
+
+PremiumPages 1.0.12
+---------------------------------
+Fix for user permission caching
+
+PremiumPages 1.0.11
+---------------------------------
+bump
+
+PremiumPages 1.0.10
+---------------------------------
+Composer autoload regenerate
+
+PremiumPages 1.0.9
+---------------------------------
+Fix for typo on plugin
+
+PremiumPages 1.0.8
+---------------------------------
+add page ID to description
+
+PremiumPages 1.0.7
+---------------------------------
+fix for customer token
+
+PremiumPages 1.0.6
+---------------------------------
+Add payments as customers to enable emailing
+
 PremiumPages 1.0.5
 ---------------------------------
 Fix for permission level

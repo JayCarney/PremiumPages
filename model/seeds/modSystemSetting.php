@@ -47,6 +47,20 @@ return array(
         'xtype'		=>     'textfield',
         'namespace' => 'premiumpages',
         'area' 		=> 'premiumpages:stripe'
+    ),
+    array(
+        'key'  		=>     'premiumpages.cm_api_key',
+        'value'		=>     '',
+        'xtype'		=>     'textfield',
+        'namespace' => 'premiumpages',
+        'area' 		=> 'premiumpages:Campaign Monitor'
+    ),
+    array(
+        'key'  		=>     'premiumpages.cm_list_id',
+        'value'		=>     '',
+        'xtype'		=>     'textfield',
+        'namespace' => 'premiumpages',
+        'area' 		=> 'premiumpages:Campaign Monitor'
     )
 );
 /*EOF*/

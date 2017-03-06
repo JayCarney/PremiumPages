@@ -47,10 +47,18 @@ class PremiumPageStripeGateway implements PremiumPageHandlerPaymentGateway
 
         \Stripe\Stripe::setApiKey($this->secret_key);
 
+        $customerDetails = array();
+        $customerDetails['card'] = $this->token;
+
+        $tokenDetails = \Stripe\Token::retrieve($this->token);
+        $customerDetails['email'] = $tokenDetails->card->name;
+
+        $stripeCustomer = \Stripe\Customer::create($customerDetails);
+
         $chargeOptions = array();
         $chargeOptions['amount'] = $this->charge;
         $chargeOptions['currency'] = 'aud';
-        $chargeOptions['source'] = $this->token;
+        $chargeOptions['customer'] = $stripeCustomer->id;
 //        $chargeOptions['source'] = array(
 //            "exp_month" => '12',
 //            "exp_year" => '22',

@@ -46,3 +46,7 @@ $_lang['setting_premiumpages.stripe_public_key'] = 'Stripe publishable key';
 $_lang['setting_premiumpages.stripe_public_key_desc'] = '';
 $_lang['setting_premiumpages.stripe_secret_key'] = 'Stripe secret key';
 $_lang['setting_premiumpages.stripe_secret_key_desc'] = '';
+$_lang['setting_premiumpages.cm_api_key'] = 'Campaign Monitor API key';
+$_lang['setting_premiumpages.cm_api_key_desc'] = '';
+$_lang['setting_premiumpages.cm_list_id'] = 'Campaign Monitor list ID';
+$_lang['setting_premiumpages.cm_list_id_desc'] = 'List ID for clients';
