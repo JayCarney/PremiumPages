@@ -21,6 +21,7 @@ class PremiumPageHandler
     private $resource;
     private $charge;
     private $description;
+    private $cmAPI;
 
     /**
      * @param modX $modx
@@ -108,33 +109,54 @@ class PremiumPageHandler
      * @param string $product_var
      * @param modUserGroup[] $userGroups
      * @throws Exception
+     * @return bool
      */
     public function addToCampaignMonitor($user, $userGroups = [], $product_var = 'Purchases'){
-        $formHandlerPath = $this->modx->getOption('formhandler.core_path');
-        $apiKey = $this->modx->getOption('premiumpages.cm_api_key');
-        $listId = $this->modx->getOption('premiumpages.cm_list_id');
-        if(!empty($formHandlerPath) && !empty($apiKey) && !empty($listId)){
-            include_once $formHandlerPath .'vendor/autoload.php';
-            $cm_api = new CM_API($apiKey, $listId);
+        $cm_api = $this->getCmAPI();
+        if(empty($cm_api)){
+            return null;
+        }
+        foreach ($userGroups as $userGroup){
+            $productName = $userGroup->get('name');
+            $cm_api->add_custom_field_value(
+                $product_var,
+                $productName,
+                'MultiSelectMany', true);
+        }
 
-            foreach ($userGroups as $userGroup){
-                $productName = $userGroup->get('name');
-                $cm_api->add_custom_field_value(
-                    $product_var,
-                    $productName,
-                    'MultiSelectMany', true);
+        $profile = $user->getOne('Profile');
+        if(!$profile){
+            throw new Exception('Error 11: User profile not found');
+        }
+
+        $name = $profile->get('fullname');
+        $email = $profile->get('email');
+
+        // update campaign monitor subscription
+        $cm_api->subscribe($name, $email);
+        return true;
+    }
+
+    /**
+     * @return CM_API|null
+     */
+    private function getCmAPI(){
+        try {
+            if(!empty($this->cmAPI)){
+                return $this->cmAPI;
             }
-
-            $profile = $user->getOne('Profile');
-            if(!$profile){
-                throw new Exception('Error 11: User profile not found');
+            $formHandlerPath = $this->modx->getOption('formhandler.core_path', null, MODX_CORE_PATH.'components/formhandler/');
+            $apiKey = $this->modx->getOption('premiumpages.cm_api_key');
+            $listId = $this->modx->getOption('premiumpages.cm_list_id');
+            if(!empty($formHandlerPath) && !empty($apiKey) && !empty($listId)){
+                include_once $formHandlerPath .'vendor/autoload.php';
+                $this->cmAPI = new CM_API($apiKey, $listId);
+                return $this->cmAPI;
+            } else {
+                return null;
             }
-
-            $name = $profile->get('fullname');
-            $email = $profile->get('email');
-
-            // update campaign monitor subscription
-            $cm_api->subscribe($name, $email);
+        } catch(Exception $e){
+            return null;
         }
     }
 
@@ -257,10 +279,20 @@ class PremiumPageHandler
             $name = $this->getPrefix() . $this->resource->get('pagetitle');
             $resourceGroup = $this->createPremiumGroup($name);
         }
+
         $resourceGroupName = $resourceGroup->get('name');
         if (!$this->resource->isMember($resourceGroupName)) {
             $this->resource->joinGroup($resourceGroup);
         }
+
+        // create option inside campaign monitor field
+        // init cm_api class, leverage process_custom_fields
+        $cm_api = $this->getCmAPI();
+        if(!empty($cm_api)){
+            $cm_api->add_custom_field_value('Purchases',$resourceGroupName,'MultiSelectMany', true);
+            $cm_api->process_custom_fields();
+        }
+
     }
 
     /**
